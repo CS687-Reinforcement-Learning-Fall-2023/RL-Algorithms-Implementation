@@ -5,7 +5,7 @@ Implementing Different RL algorithms on Benchmarked MDP Domains
 1. Acrobot
 
 ### Authors: 
-1. Archana Ganesh
-2. Krishna Praneet Gudipaty
+1. Archana Ganesh - 
+2. Krishna Praneet Gudipaty - 33613573
 
 
