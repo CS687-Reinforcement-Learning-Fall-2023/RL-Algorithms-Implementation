@@ -3,9 +3,11 @@ Implementing Different RL Algorithms on Benchmarked MDP Domains
 
 ## MDP Domains
 1. 687-Gridworld
-2. Cartpole
+2. Mountain Car
 
 ## Algorithms
+1. Priority Sweeping
+2. Episodic Semi-Gradient n-step SARSA
 
 ### Authors: 
 1. Archana Ganesh - 33590505
