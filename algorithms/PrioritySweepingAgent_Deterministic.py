@@ -217,7 +217,7 @@ class PrioritizedSweepingAgent:
     
     optimal_idx = np.where(np.max(q) == q)[0]
 
-    if np.random.uniform(0, 1) <= self.epsilon :
+    if np.random.uniform(0, 1) < self.epsilon :
       return np.random.choice(self.domain.actions)
     else: 
       return np.random.choice([self.domain.actions[i] for i in optimal_idx])
@@ -267,33 +267,21 @@ class PrioritizedSweepingAgent:
             
             
             # Update q-values n times
-            
+            updates = 0
             for _ in range(self.n):
               
               if self.queue.empty():
-              
                 break
-              # print(self.model)
-              # print("queue size:" , self.queue.queue)
-              # _delta, (_state, _action) = self.queue.get()
               _state, _action = self.queue.get()[1]
-              # _delta, (_state, _action) = heappop(self.heap)
+              
               _r, _c = _state
-              # print(_r, _c)
+              
               _reward, _next_state = self.model[_state][_action]
               
               _nr, _nc = _next_state
-              # print(self.domain.action_values)
-              # print(self.domain.action_values[_r][_c])
-              # print("get ready")
-              # print(self.domain.action_index[_action])
-              # d = input()
               
               self.domain.action_values[_r][_c][self.domain.action_index[_action]] += self.alpha * (_reward + self.gamma * np.max(self.domain.action_values[_nr][_nc]) - self.domain.action_values[_r][_c][self.domain.action_index[_action]])
-              # print(self.domain.action_values)
-              # c = input()
-              # print(_r,_c)
-
+              
               # loop for all state, action predicted lead to _state
               if _state not in self.prev:
                   continue
@@ -306,11 +294,12 @@ class PrioritizedSweepingAgent:
             
           # end of game
           # if eps % 99 == 0:
-        
+        self.epsilon = min(0.1, self.epsilon - 0.005)
         print(f"Episode : {eps+1}, Number of actions: {len(self.state_actions)}")
         print_max_action_values(self.domain.action_values)
         # print(self.domain.action_values)
         self.steps_per_episode.append(len(self.state_actions))
+        
         self.reset()
 
 def print_max_action_values(action_values):
@@ -330,12 +319,12 @@ def print_max_action_values(action_values):
 
 if __name__ == "__main__":
   alpha = 0.1
-  epsilon = 0.4
-  n = 5
+  epsilon = 0.5
+  n = 10
   max_episodes = 500
   theta = 0.0
   
-  agent = PrioritizedSweepingAgent(alpha=alpha, epsilon=epsilon, max_episodes=max_episodes, n=n, theta=theta)
+  agent = PrioritizedSweepingAgent(alpha=alpha, epsilon=epsilon, max_episodes=max_episodes, n=n, theta=theta, gamma=1)
   agent.run_prioritized_sweeping()
   final_values = agent.domain.action_values
   print_max_action_values(final_values)
