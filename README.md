@@ -4,6 +4,7 @@ Implementing Different RL Algorithms on Benchmarked MDP Domains
 ## MDP Domains
 1. 687-Gridworld
 2. Mountain Car
+3. Frozen Lake
 
 ## Algorithms
 1. Priority Sweeping
