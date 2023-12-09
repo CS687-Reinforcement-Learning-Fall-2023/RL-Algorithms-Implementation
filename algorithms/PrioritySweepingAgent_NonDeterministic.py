@@ -62,6 +62,21 @@ REWARD[(4,2)] = -10.0
 TERMINAL = [(4,4)]
 
 OBSTACLES = [(2,2), (3,2)]
+OPTIMAL = [[4.0187, 4.5548, 5.1575, 5.8336, 6.4553],
+[4.3716, 5.0324, 5.8013, 6.6473, 7.3907],
+[3.8672, 4.3900, 0.0000, 7.5769, 8.4637],
+[3.4183, 3.8319, 0.0000, 8.5738, 9.6946],
+[2.9977, 2.9310, 6.0733, 9.6946, 0.0000]]
+
+def calculate_mse(action_values):
+  values = []
+  for row in action_values:
+    value_row = []
+    for qs in row:
+      value_row.append(np.max(qs))
+    values.append(value_row)
+  diff = np.subtract(OPTIMAL, values)
+  return np.sum(np.square(diff))
 
 class Gridworld:
   def __init__(self, gamma=0.9, obstacles=OBSTACLES, reward=REWARD, terminal=TERMINAL) -> None:
@@ -217,6 +232,7 @@ class PrioritizedSweepingAgent:
         self.alpha = alpha
         self.heap = []
         heapify(self.heap)
+        self.mse = []
 
         self.n = n
         self.max_episodes = max_episodes  # number of episodes going to play
@@ -234,7 +250,7 @@ class PrioritizedSweepingAgent:
     
     optimal_idx = np.where(np.max(q) == q)[0]
 
-    if np.random.uniform(0, 1) <= self.epsilon :
+    if np.random.uniform(0, 1) < self.epsilon :
       return np.random.choice(self.domain.actions)
     else: 
       return np.random.choice([self.domain.actions[i] for i in optimal_idx])
@@ -280,32 +296,13 @@ class PrioritizedSweepingAgent:
             
             # Update q-values n times
             
-            for _ in range(self.n):
+            while updates < self.n:
               
               if self.queue.empty():
-              
                 break
-              # print(self.model)
-              # print("queue size:" , self.queue.queue)
-              # _delta, (_state, _action) = self.queue.get()
               _state, _action = self.queue.get()[1]
-              # _delta, (_state, _action) = heappop(self.heap)
               _r, _c = _state
-              # print(_r, _c)
-              # _reward, _next_state = self.model[_state][_action]
-              
-              # _nr, _nc = _next_state
-              # print(self.domain.action_values)
-              # print(self.domain.action_values[_r][_c])
-              # print("get ready")
-              # print(self.domain.action_index[_action])
-              # d = input()
-              
-              # self.domain.action_values[_r][_c][self.domain.action_index[_action]] += self.alpha * (_reward + self.gamma * np.max(self.domain.action_values[_nr][_nc]) - self.domain.action_values[_r][_c][self.domain.action_index[_action]])
-              # print(self.domain.action_values)
-              # c = input()
-              # print(_r,_c)
-
+      
               # loop for all state, action predicted lead to _state
               if _state not in self.prev:
                   continue
@@ -320,8 +317,7 @@ class PrioritizedSweepingAgent:
                     q_sum += prob * (self.domain.get_reward(next_state) + self.gamma * np.max(self.domain.action_values[next_state[0]][next_state[1]]))
                   old_diff = q_sum - q_old
                   self.domain.action_values[old_r][old_c][self.domain.action_index[old_action]] = q_sum
-                  # old_reward, _ = self.model[old_state][old_action]
-                  # old_diff = old_reward + self.gamma * np.max(self.domain.action_values[_state[0]][_state[1]]) - self.domain.action_values[old_state[0]][old_state[1]][self.domain.action_index[old_action]]
+                  
                   if abs(old_diff) > self.theta:
                       q_max = np.max(self.domain.action_values[old_r][old_c])
                       updates += 1
@@ -330,7 +326,9 @@ class PrioritizedSweepingAgent:
             
           # end of game
           # if eps % 99 == 0:
-        
+        mse = calculate_mse(self.domain.action_values)
+        self.mse.append(mse)
+        self.epsilon = max(0.1, self.epsilon - 0.005)
         print(f"Episode : {eps+1}, Number of actions: {len(self.state_actions)}")
         print_max_action_values(self.domain.action_values)
         # print(self.domain.action_values)
@@ -381,33 +379,72 @@ def printOptimalPolicy(values) -> None:
 
 
 if __name__ == "__main__":
-  alpha = 0.01
-  epsilon = 0.1
+  alpha = 0.2
+  alpha_range = [0.1, 0.2, 0.3, 0.5, 0.7]
+  epsilon = 0.5
+  # epsilon_range = [0.1,0.3,0.5,0.7]
   n = 5
   max_episodes = 100
-  theta = 0.0
+  theta = 0.0001
+  repeat = 10
   
-  agent = PrioritizedSweepingAgent(alpha=alpha, epsilon=epsilon, max_episodes=max_episodes, n=n, theta=theta)
-  agent.run_prioritized_sweeping()
-  final_values = agent.domain.action_values
-  print_max_action_values(final_values)
-  steps_per_eps = agent.steps_per_episode
-  to_plot = [steps_per_eps[0]]
-  for i in range(1, len(steps_per_eps)):
-    to_plot.append(to_plot[-1] + steps_per_eps[i])
+  # plt.figure()
+  # for epsilon in epsilon_range:
+  #   to_plot_sum = np.zeros(max_episodes)
+  #   for i in range(repeat):
+  #     agent = PrioritizedSweepingAgent(alpha=alpha, epsilon=epsilon, max_episodes=max_episodes, n=n, theta=theta)
+  #     agent.run_prioritized_sweeping()
+  #     final_values = agent.domain.action_values
+  #     print_max_action_values(final_values)
+  #     steps_per_eps = agent.steps_per_episode
+  #     to_plot = [steps_per_eps[0]]
+  #     for i in range(1, len(steps_per_eps)):
+  #       to_plot.append(to_plot[-1] + steps_per_eps[i])
+      
+  #     to_plot_sum = np.add(to_plot_sum, to_plot)
+  #   to_plot_sum = np.divide(to_plot_sum, repeat)
+  #   plt.plot(to_plot_sum, range(1, len(agent.steps_per_episode) + 1), label=f"epsilon = {epsilon}")
 
+  #     # plt.plot(range(1,len(agent.mse) + 1), agent.mse, label=f"epsilon = {epsilon}")
 
-  agent.calcOptimalPolicy()
-  printOptimalPolicy(agent.optimal_policy)
-  
+  # # agent.calcOptimalPolicy()
+  # # printOptimalPolicy(agent.optimal_policy)
+
+  # plt.ylabel("Episodes")
+  # plt.xlabel("Action Steps")
+  # plt.title("687-Gridworld Learning curve")
+  # plt.legend()
+  # plt.show()
 
 
   plt.figure()
-  plt.plot(to_plot, range(1, len(agent.steps_per_episode) + 1))
-  plt.ylabel("Episodes")
-  plt.xlabel("Action steps")
-  plt.show()
+  for alpha in alpha_range:
+    to_plot_sum = np.zeros(max_episodes)
+    to_mse_sum = np.zeros(max_episodes)
+    for i in range(repeat):
+      agent = PrioritizedSweepingAgent(alpha=alpha, epsilon=epsilon, max_episodes=max_episodes, n=n, theta=theta)
+      agent.run_prioritized_sweeping()
+      final_values = agent.domain.action_values
+      print_max_action_values(final_values)
+      steps_per_eps = agent.steps_per_episode
+      to_plot = [steps_per_eps[0]]
+      for i in range(1, len(steps_per_eps)):
+        to_plot.append(to_plot[-1] + steps_per_eps[i])
+      to_mse_sum = np.add(to_mse_sum, agent.mse)
+      to_plot_sum = np.add(to_plot_sum, to_plot)
+    to_plot_sum = np.divide(to_plot_sum, repeat)
+    to_mse_sum = np.divide(to_mse_sum, repeat)
+    plt.plot(to_plot_sum, range(1, len(agent.steps_per_episode) + 1), label=f"alpha = {alpha}")
+    # plt.plot(range(1,len(to_mse_sum) + 1), to_mse_sum, label=f"alpha = {alpha}")
 
+  # agent.calcOptimalPolicy()
+  # printOptimalPolicy(agent.optimal_policy)
+
+  plt.ylabel("Epsiodes")
+  plt.xlabel("Action Steps")
+  plt.title("687-Gridworld Learning curve")
+  plt.legend()
+  plt.show()
 
   
 
