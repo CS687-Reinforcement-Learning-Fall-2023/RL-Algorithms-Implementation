@@ -289,7 +289,7 @@ def displayPolicy(policy):
 
 def nStepSarsa(env, num_episodes, alpha, gamma, epsilon, theta, n):
     num_actions = 4
-    decay_const = 100000
+    decay_const = 1000
     epsilon_decay = 0.00001
     episode = 0
     delta = 0.0
@@ -314,8 +314,8 @@ def nStepSarsa(env, num_episodes, alpha, gamma, epsilon, theta, n):
         action = epsilonGreedyPolicy(Q, state, epsilon, num_actions)
         episode_states, episode_actions, episode_rewards = [state], [action], [0]
 
-        print(f"Episode {episode}:")
-        print(f"Starting state at (discretized): {state}")
+        # print(f"Episode {episode}:")
+        # print(f"Starting state at (discretized): {state}")
         
 
         T = float('inf')
@@ -350,11 +350,15 @@ def nStepSarsa(env, num_episodes, alpha, gamma, epsilon, theta, n):
             state = next_state
             action = next_action
         
-        alpha *= (1 - 1/(decay_const))
+        # alpha *= (1 - 1/(decay_const))
         epsilon *= epsilon_decay
-        
-        print(f"Max change is {delta}")
-        print(f"Steps taken = {steps2}")
+
+        # if episode%1000==0:
+        #     print("here")
+        #     values, _ = getValuePolicy(Q)
+        #     displayValues(values)
+        #     print(f"Max change is {delta}")
+        #     print(f"Steps taken = {steps2}")
 
         steps_per_episode.append(steps)
         steps_list.append(steps2)
@@ -364,26 +368,35 @@ def nStepSarsa(env, num_episodes, alpha, gamma, epsilon, theta, n):
 
         # if delta < theta:
         #     break
-
-        total_return = np.sum(np.array(episode_rewards))
-        print(f"Total return is {total_return}")
     
     print(f"Average number of steps taken to reach goal is {np.mean(steps_list)}")
     return Q, steps_list
 
 if __name__ == "__main__":
-    num_episodes = 1000000
+    num_episodes = 1000
     alpha = 0.1
     gamma = 0.9
     epsilon = 0.9
     theta = 1.0
     n = 4
-    iterations = 1
+    iterations = 20
 
     env = Gridworld(gamma)
     num_actions = 4
     
-    Q, steps_per_episode = nStepSarsa(env, num_episodes, alpha, gamma, epsilon, theta, n)
+    # Q, steps_per_episode = nStepSarsa(env, num_episodes, alpha, gamma, epsilon, theta, n)
+
+    steps_list = []
+    for i in range(iterations):
+        print(f"---------Iteration {i}-------------")
+        Q, steps_per_episode = nStepSarsa(env, num_episodes, alpha, gamma, epsilon, theta, n)
+        steps_list.append(steps_per_episode)
+        values, policy = getValuePolicy(Q)
+        displayPolicy(policy)
+        displayValues(values)
+
+    # Average over iterations
+    steps_per_episode = np.mean(np.array(steps_list),axis=0)
 
     values, policy = getValuePolicy(Q)
     
@@ -401,9 +414,9 @@ if __name__ == "__main__":
     # print(Q)
     # print(steps_per_episode)
     # Plot graphs
-    # plt.plot(range(1, len(steps_per_episode) + 1), steps_per_episode)
-    # plt.xlabel('Episodes')
-    # plt.ylabel('Steps')
-    # plt.title('Episodes vs Steps')
-    # plt.savefig('gridworld-n-step.png')
-    # plt.show()
+    plt.plot(range(1, len(steps_per_episode) + 1), steps_per_episode)
+    plt.xlabel('Episodes')
+    plt.ylabel('Steps')
+    plt.title('Episodes vs Steps')
+    plt.savefig('gridworld-n-step.png')
+    plt.show()
